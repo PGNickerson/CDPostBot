@@ -1,5 +1,6 @@
 package cdpostbot;
 
+import cdpostbot.http.HTTP;
 import cdpostbot.model.*;
 import cdpostbot.read.*;
 import java.io.*;
@@ -8,72 +9,58 @@ import java.util.*;
 import org.pircbotx.*;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.MessageEvent;
-import com.google.gson.Gson;
+import com.google.gson.*;
 
-public class CDPostBot extends ListenerAdapter
-{
+public class CDPostBot extends ListenerAdapter {
+
     static PircBotX bot = new PircBotX();
     static GoogleResults googleMsgResults;
 
-    
-    public CDPostBot()
-    {
+    public CDPostBot() {
     }
-    
-    public void msg(MessageEvent event, String outputMessage)
-    {
+
+    public void msg(MessageEvent event, String outputMessage) {
         bot.sendMessage(event.getChannel(), outputMessage);
     }
-    
-    public void msg(String chan, String outputMessage)
-    {
+
+    public void msg(String chan, String outputMessage) {
         bot.sendMessage(chan, outputMessage);
     }
-    
-    public void onMessage(MessageEvent event) throws Exception
-    {
+
+    public void onMessage(MessageEvent event) throws Exception {
         String message = event.getMessage();
         String nick = event.getUser().getNick();
         String name = event.getChannel().getName();
-        if (message.equalsIgnoreCase(".time"))
-        {
+        if (message.equalsIgnoreCase(".time")) {
             msg(event, (new StringBuilder()).append("The time is: ").append(new Date()).toString());
         }
-        if (message.equalsIgnoreCase(".test"))
-        {
+        if (message.equalsIgnoreCase(".test")) {
             msg(event, "test received");
         }
-        if (message.startsWith(".paste"))
-        {
+        if (message.startsWith(".paste")) {
             String s4 = message.substring(7);
             msg(event, paste(s4));
         }
-        if (message.startsWith(".ping"))
-        {
+        if (message.startsWith(".ping")) {
             msg(event, ping(message.substring(6)));
         }
-        if (message.startsWith(".google"))
-        {
+        if (message.startsWith(".google")) {
             googleMsgResults = google(message.substring(8));
-            if (googleMsgResults.getResponseData().getResults().size() != 0)
-            {
+            if (googleMsgResults.getResponseData().getResults().size() != 0) {
                 String stripped = googleMsgResults.getResponseData().getResults().get(0).getTitle().replaceAll("<[^>]*>", "");
                 msg(event, stripped + " - " + googleMsgResults.getResponseData().getResults().get(0).getUrl());
             }
         }
-        if (message.startsWith(".cdsearch"))
-        {
+        if (message.startsWith(".cdsearch")) {
             googleMsgResults = google("site:chiefdelphi.com" + message.substring(10));
-            if (googleMsgResults.getResponseData().getResults().size() != 0)
-            {
+            if (googleMsgResults.getResponseData().getResults().size() != 0) {
                 String stripped = googleMsgResults.getResponseData().getResults().get(0).getTitle().replaceAll("<[^>]*>", "");
                 msg(event, stripped + " - " + googleMsgResults.getResponseData().getResults().get(0).getUrl());
             }
         }
     }
-    
-    public static void main(String[] args) throws Exception
-    {
+
+    public static void main(String[] args) throws Exception {
         bot.getListenerManager().addListener(new CDPostBot());
         bot.setName("CDBot");
         bot.connect("irc.freenode.net");
@@ -84,20 +71,21 @@ public class CDPostBot extends ListenerAdapter
         System.out.println(previousFeed.getMessages().get(0).getTitle() + " | " + previousFeed.getMessages().get(0).getLink());
         bot.sendMessage("##CDBot", previousFeed.getMessages().get(0).getTitle() + " | " + previousFeed.getMessages().get(0).getLink());
         bot.sendMessage("##FRC", previousFeed.getMessages().get(0).getTitle() + " | " + previousFeed.getMessages().get(0).getLink());
-        while(true)
-        {
-            Feed feed = parser.readFeed();
-            if(!feed.getMessages().get(0).getTitle().equals(previousFeed.getMessages().get(0).getTitle()))
-            {
+        Feed feed;
+        System.out.println(getTBAEventKeys());
+        while (true) {
+            feed = parser.readFeed();
+            if (!feed.getMessages().get(0).getTitle().equals(previousFeed.getMessages().get(0).getTitle())) {
                 previousFeed = feed;
                 System.out.println(feed.getMessages().get(0).getTitle() + " | " + feed.getMessages().get(0).getLink());
                 bot.sendMessage("##CDBot", feed.getMessages().get(0).getTitle() + " | " + feed.getMessages().get(0).getLink());
                 bot.sendMessage("##FRC", feed.getMessages().get(0).getTitle() + " | " + feed.getMessages().get(0).getLink());
             }
+
         }
     }
-     public static String paste(String pasteString) throws IOException
-    {
+
+    public static String paste(String pasteString) throws IOException {
         String api_dev_key = "f7294063e7414c56bc44a7bca6c5f38c";
         String api_paste_code = pasteString;
         String api_paste_private = "0";
@@ -128,25 +116,18 @@ public class CDPostBot extends ListenerAdapter
         BufferedReader br = null;
         StringBuilder sb = new StringBuilder();
         String line;
-        try
-        {
+        try {
             br = new BufferedReader(new InputStreamReader(response));
-            while ((line = br.readLine()) != null)
-            {
+            while ((line = br.readLine()) != null) {
                 sb.append(line);
             }
-        } catch (IOException e)
-        {
+        } catch (IOException e) {
             e.printStackTrace();
-        } finally
-        {
-            if (br != null)
-            {
-                try
-                {
+        } finally {
+            if (br != null) {
+                try {
                     br.close();
-                } catch (IOException e)
-                {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -154,40 +135,32 @@ public class CDPostBot extends ListenerAdapter
         return sb.toString();
     }
 
-    public static String ping(String url)
-    {
-        if (url.startsWith("http://"))
-        {
-        } else if (url.startsWith("https://"))
-        {
+    public static String ping(String url) {
+        if (url.startsWith("http://")) {
+        } else if (url.startsWith("https://")) {
             url = url.replaceFirst("https", "http"); // Otherwise an exception may be thrown on invalid SSL certificates.
-        } else
-        {
+        } else {
             url = "http://" + url;
         }
 
-        try
-        {
+        try {
             HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
             connection.setConnectTimeout(500);
             connection.setReadTimeout(500);
             connection.setRequestMethod("HEAD");
             int responseCode = connection.getResponseCode();
 
-            if ((200 <= responseCode && responseCode <= 399) || (responseCode == 403))
-            {
+            if ((200 <= responseCode && responseCode <= 399) || (responseCode == 403)) {
                 return "successful ping with code " + responseCode;
             }
             return "unsuccessful ping with code " + responseCode;
 
-        } catch (IOException exception)
-        {
+        } catch (IOException exception) {
             return "unsuccessful ping with IOException";
         }
     }
 
-    static GoogleResults google(String query) throws IOException
-    {
+    static GoogleResults google(String query) throws IOException {
 
         String address = "http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=";
         String charset = "UTF-8";
@@ -208,77 +181,74 @@ public class CDPostBot extends ListenerAdapter
          */
     }
 
+    static List<String> getTBAEventKeys() throws Exception {
+        String address = "http://www.thebluealliance.com/api/v2/events/2014";
+        List<String> keyList = new ArrayList<String>();
+        
+        Gson gson = new Gson();
+        
+        
+        return keyList;
+    }
+    
+    
 }
 
-class GoogleResults
-{
+class GoogleResults {
 
     private ResponseData responseData;
 
-    public ResponseData getResponseData()
-    {
+    public ResponseData getResponseData() {
         return responseData;
     }
 
-    public void setResponseData(ResponseData responseData)
-    {
+    public void setResponseData(ResponseData responseData) {
         this.responseData = responseData;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return "ResponseData[" + responseData + "]";
     }
 
-    static class ResponseData
-    {
+    static class ResponseData {
 
         private List<Result> results;
 
-        public List<Result> getResults()
-        {
+        public List<Result> getResults() {
             return results;
         }
 
-        public void setResults(List<Result> results)
-        {
+        public void setResults(List<Result> results) {
             this.results = results;
         }
 
-        public String toString()
-        {
+        public String toString() {
             return "Results[" + results + "]";
         }
     }
 
-    static class Result
-    {
+    static class Result {
 
         private String url;
         private String title;
 
-        public String getUrl()
-        {
+        public String getUrl() {
             return url;
         }
 
-        public String getTitle()
-        {
+        public String getTitle() {
             return title;
         }
 
-        public void setUrl(String url)
-        {
+        public void setUrl(String url) {
             this.url = url;
         }
 
-        public void setTitle(String title)
-        {
+        public void setTitle(String title) {
             this.title = title;
         }
 
-        public String toString()
-        {
+        public String toString() {
             return "Result[url:" + url + ",title:" + title + "]";
         }
     }
