@@ -1,2 +1,0 @@
-Aug 15 12:42:45 JavaBridge ERROR: PHP Warning:  Cannot load module 'XCache' because conflicting module 'apc' is already loaded in Unknown on line 0
-

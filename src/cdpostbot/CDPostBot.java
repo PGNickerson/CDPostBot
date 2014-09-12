@@ -10,11 +10,14 @@ import org.pircbotx.*;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.MessageEvent;
 import com.google.gson.*;
+import com.google.gson.annotations.*;
 
 public class CDPostBot extends ListenerAdapter {
-
+    
+    static String eventListString;
     static PircBotX bot = new PircBotX();
     static GoogleResults googleMsgResults;
+    static JsonArray eventList;
 
     public CDPostBot() {
     }
@@ -27,19 +30,13 @@ public class CDPostBot extends ListenerAdapter {
         bot.sendMessage(chan, outputMessage);
     }
 
+    @Override
     public void onMessage(MessageEvent event) throws Exception {
         String message = event.getMessage();
         String nick = event.getUser().getNick();
         String name = event.getChannel().getName();
-        if (message.equalsIgnoreCase(".time")) {
-            msg(event, (new StringBuilder()).append("The time is: ").append(new Date()).toString());
-        }
         if (message.equalsIgnoreCase(".test")) {
             msg(event, "test received");
-        }
-        if (message.startsWith(".paste")) {
-            String s4 = message.substring(7);
-            msg(event, paste(s4));
         }
         if (message.startsWith(".ping")) {
             msg(event, ping(message.substring(6)));
@@ -51,11 +48,37 @@ public class CDPostBot extends ListenerAdapter {
                 msg(event, stripped + " - " + googleMsgResults.getResponseData().getResults().get(0).getUrl());
             }
         }
-        if (message.startsWith(".cdsearch")) {
-            googleMsgResults = google("site:chiefdelphi.com" + message.substring(10));
-            if (googleMsgResults.getResponseData().getResults().size() != 0) {
-                String stripped = googleMsgResults.getResponseData().getResults().get(0).getTitle().replaceAll("<[^>]*>", "");
-                msg(event, stripped + " - " + googleMsgResults.getResponseData().getResults().get(0).getUrl());
+        if(message.startsWith(".tbaeventdata"))
+        {
+            String eventKey = message.substring(14);
+            
+            System.out.println("getting data for " + eventKey);
+            
+            for(JsonElement element: eventList)
+            {
+                JsonObject object = element.getAsJsonObject();
+                if(object.get("key").getAsString().equals(eventKey))
+                {
+                    msg(event, "name: " + object.get("name").getAsString());
+                    msg(event, "website: " + object.get("website").getAsString());
+                    msg(event, "official?: " + object.get("official").getAsString());
+                    msg(event, "district: " + object.get("district").getAsString());
+                }
+            }
+        }
+        if(message.startsWith(".tbaeventpage"))
+        {
+            String eventKey = message.substring(14);
+            
+            System.out.println("getting page for " + eventKey);
+            
+            for(JsonElement element: eventList)
+            {
+                JsonObject object = element.getAsJsonObject();
+                if(object.get("key").getAsString().equals(eventKey))
+                {
+                    msg(event, "http://www.thebluealliance.com/event/" + object.get("key").getAsString());
+                }
             }
         }
     }
@@ -69,19 +92,23 @@ public class CDPostBot extends ListenerAdapter {
         RSSFeedParser parser = new RSSFeedParser("http://www.chiefdelphi.com/forums/external.php?type=RSS2&forumids=59,171,13,16,113,15,21,58,125,50,22,66,52,53,185,51,182,183,184,187,177,176,173,54,55,168,57,152,169,85,9,64,159,56,149,150,3,158,11,6,36,147,86,63,82,87,88,12,10,180,188,20,4,148,24,140,181,47,110,14,84,128,122,160,35,61,62,78,65,80,83,114,134,172,174,175,112,124,126,130,131,146,162,178,189,49,70,127,7,8,68,37,38,39,40,59");
         Feed previousFeed = parser.readFeed();
         System.out.println(previousFeed.getMessages().get(0).getTitle() + " | " + previousFeed.getMessages().get(0).getLink());
+        getEventListString();
+        getTBAEventList();
+        System.out.println(eventList.get(0).getAsJsonObject().get("key"));
+        
         bot.sendMessage("##CDBot", previousFeed.getMessages().get(0).getTitle() + " | " + previousFeed.getMessages().get(0).getLink());
         bot.sendMessage("##FRC", previousFeed.getMessages().get(0).getTitle() + " | " + previousFeed.getMessages().get(0).getLink());
         Feed feed;
-        System.out.println(getTBAEventKeys());
-        while (true) {
+        while (true)
+        {
             feed = parser.readFeed();
-            if (!feed.getMessages().get(0).getTitle().equals(previousFeed.getMessages().get(0).getTitle())) {
+            if (!feed.getMessages().get(0).getTitle().equals(previousFeed.getMessages().get(0).getTitle()))
+            {
                 previousFeed = feed;
                 System.out.println(feed.getMessages().get(0).getTitle() + " | " + feed.getMessages().get(0).getLink());
                 bot.sendMessage("##CDBot", feed.getMessages().get(0).getTitle() + " | " + feed.getMessages().get(0).getLink());
                 bot.sendMessage("##FRC", feed.getMessages().get(0).getTitle() + " | " + feed.getMessages().get(0).getLink());
             }
-
         }
     }
 
@@ -181,17 +208,17 @@ public class CDPostBot extends ListenerAdapter {
          */
     }
 
-    static List<String> getTBAEventKeys() throws Exception {
-        String address = "http://www.thebluealliance.com/api/v2/events/2014";
-        List<String> keyList = new ArrayList<String>();
-        
-        Gson gson = new Gson();
-        
-        
-        return keyList;
+    static void getEventListString()
+    {
+        eventListString = HTTP.GET("http://www.thebluealliance.com/api/v2/events/2014");
     }
     
-    
+    static void getTBAEventList()
+    {
+        Gson gson = new Gson();
+        
+        eventList = gson.fromJson(eventListString, JsonArray.class);
+    }
 }
 
 class GoogleResults {
