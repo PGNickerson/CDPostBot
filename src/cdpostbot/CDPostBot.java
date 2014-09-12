@@ -51,6 +51,16 @@ public class CDPostBot extends ListenerAdapter {
                 msg(event, stripped + " - " + googleMsgResults.getResponseData().getResults().get(0).getUrl());
             }
         }
+        if(message.startsWith(".cdsearch"))
+        {
+            String[] tmp = message.split("\\s+");
+            
+            googleMsgResults = google("site:chiefdelphi.com " + tmp[1]);
+            if (googleMsgResults.getResponseData().getResults().size() != 0) {
+                String stripped = googleMsgResults.getResponseData().getResults().get(0).getTitle().replaceAll("<[^>]*>", "");
+                msg(event, stripped + " - " + googleMsgResults.getResponseData().getResults().get(0).getUrl());
+            }
+        }
         if(message.startsWith(".tbaeventdata"))
         {
             String eventKey = message.substring(14);
@@ -60,7 +70,7 @@ public class CDPostBot extends ListenerAdapter {
             for(JsonElement element: eventList)
             {
                 JsonObject object = element.getAsJsonObject();
-                if(object.get("key").getAsString().equals(eventKey))
+                if(object.get("key").getAsString().equalsIgnoreCase(eventKey))
                 {
                     msg(event, "name: " + object.get("name").getAsString());
                     msg(event, "website: " + object.get("website").getAsString());
@@ -78,7 +88,7 @@ public class CDPostBot extends ListenerAdapter {
             for(JsonElement element: eventList)
             {
                 JsonObject object = element.getAsJsonObject();
-                if(object.get("key").getAsString().equals(eventKey))
+                if(object.get("key").getAsString().equalsIgnoreCase(eventKey))
                 {
                     msg(event, "http://www.thebluealliance.com/event/" + object.get("key").getAsString());
                 }
@@ -88,14 +98,43 @@ public class CDPostBot extends ListenerAdapter {
         {
             String eventKey = message.substring(14);
             
-            JsonObject object = gson.fromJson(getEventMatchesString(eventKey), JsonArray.class).get(0).getAsJsonObject();
+            JsonArray array = gson.fromJson(getEventMatchesString(eventKey), JsonArray.class);
+            JsonObject object = array.get(array.size() - 1).getAsJsonObject();
+            int lastTime = 0;
+            for(JsonElement element: array)
+            {
+                if(element.getAsJsonObject().get("time").getAsInt() > lastTime)
+                {
+                    lastTime = element.getAsJsonObject().get("time").getAsInt();
+                    object = element.getAsJsonObject();
+                }
+            }
             JsonObject alliances = object.get("alliances").getAsJsonObject();
             
             msg(event, "match: " + object.get("comp_level").getAsString() + object.get("match_number").getAsString());
+            msg(event, "time: " + object.get("time_string").getAsString());
             msg(event, "blue: " + alliances.get("blue").getAsJsonObject().get("score").getAsString());
             msg(event, "teams: " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(0).getAsString() + ", " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(1).getAsString() + ", " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(2).getAsString());
             msg(event, "red: " + alliances.get("red").getAsJsonObject().get("score").getAsString());
             msg(event, "teams: " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(0).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(1).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(2).getAsString());
+        }
+        if(message.startsWith(".tbagetkey"))
+        {
+            String tmp = message.substring(11);
+            System.out.println(tmp);
+            if(!(tmp.equalsIgnoreCase("regional")))
+            {
+                for(JsonElement element: eventList)
+                {
+                    JsonObject object = element.getAsJsonObject();
+                    
+                    if(object.get("name").getAsString().toLowerCase().contains(tmp.toLowerCase()))
+                    {
+                        System.out.println(object.get("key").getAsString());
+                        msg(event, object.get("key").getAsString());
+                    }
+                }
+            }
         }
     }
 
