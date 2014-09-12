@@ -23,7 +23,7 @@ public class HTTP {
         try {
             HttpClient httpclient = new DefaultHttpClient(); // for port 80 requests!
             HttpGet httpget = new HttpGet(url);
-            httpget.addHeader("X-TBA-App-Id", "pimathbrainiac:CDBot:v1");
+            httpget.addHeader("X-TBA-App-Id", "pimathbrainiac:CDBot:v1.1");
             if (lastUpdated != null) {
                 httpget.addHeader("If-Modified-Since", lastUpdated);
             }

@@ -18,6 +18,8 @@ public class CDPostBot extends ListenerAdapter {
     static PircBotX bot = new PircBotX();
     static GoogleResults googleMsgResults;
     static JsonArray eventList;
+    static String eventMatchesString;
+    static JsonArray eventMatches;
 
     public CDPostBot() {
     }
@@ -32,6 +34,7 @@ public class CDPostBot extends ListenerAdapter {
 
     @Override
     public void onMessage(MessageEvent event) throws Exception {
+        Gson gson = new Gson();
         String message = event.getMessage();
         String nick = event.getUser().getNick();
         String name = event.getChannel().getName();
@@ -80,6 +83,19 @@ public class CDPostBot extends ListenerAdapter {
                     msg(event, "http://www.thebluealliance.com/event/" + object.get("key").getAsString());
                 }
             }
+        }
+        if(message.startsWith(".tbalastscore"))
+        {
+            String eventKey = message.substring(14);
+            
+            JsonObject object = gson.fromJson(getEventMatchesString(eventKey), JsonArray.class).get(0).getAsJsonObject();
+            JsonObject alliances = object.get("alliances").getAsJsonObject();
+            
+            msg(event, "match: " + object.get("comp_level").getAsString() + object.get("match_number").getAsString());
+            msg(event, "blue: " + alliances.get("blue").getAsJsonObject().get("score").getAsString());
+            msg(event, "teams: " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(0).getAsString() + ", " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(1).getAsString() + ", " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(2).getAsString());
+            msg(event, "red: " + alliances.get("red").getAsJsonObject().get("score").getAsString());
+            msg(event, "teams: " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(0).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(1).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(2).getAsString());
         }
     }
 
@@ -218,6 +234,11 @@ public class CDPostBot extends ListenerAdapter {
         Gson gson = new Gson();
         
         eventList = gson.fromJson(eventListString, JsonArray.class);
+    }
+    
+    static String getEventMatchesString(String key)
+    {
+        return HTTP.GET("http://www.thebluealliance.com/api/v2/event/"+ key + "/matches");
     }
 }
 
