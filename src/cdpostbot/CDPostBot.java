@@ -11,6 +11,7 @@ import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.MessageEvent;
 import com.google.gson.*;
 import com.google.gson.annotations.*;
+import java.net.URLDecoder;
 
 public class CDPostBot extends ListenerAdapter {
     
@@ -48,17 +49,17 @@ public class CDPostBot extends ListenerAdapter {
             googleMsgResults = google(message.substring(8));
             if (googleMsgResults.getResponseData().getResults().size() != 0) {
                 String stripped = googleMsgResults.getResponseData().getResults().get(0).getTitle().replaceAll("<[^>]*>", "");
-                msg(event, stripped + " - " + googleMsgResults.getResponseData().getResults().get(0).getUrl());
+                msg(event, stripped + " - " + URLDecoder.decode(googleMsgResults.getResponseData().getResults().get(0).getUrl(), "UTF-8"));
             }
         }
         if(message.startsWith(".cdsearch"))
         {
-            String[] tmp = message.split("\\s+");
+            String tmp = message.substring(10);
             
-            googleMsgResults = google("site:chiefdelphi.com " + tmp[1]);
+            googleMsgResults = google("site:chiefdelphi.com " + tmp);
             if (googleMsgResults.getResponseData().getResults().size() != 0) {
                 String stripped = googleMsgResults.getResponseData().getResults().get(0).getTitle().replaceAll("<[^>]*>", "");
-                msg(event, stripped + " - " + googleMsgResults.getResponseData().getResults().get(0).getUrl());
+                msg(event, stripped + " - " + URLDecoder.decode(googleMsgResults.getResponseData().getResults().get(0).getUrl(), "UTF-8"));
             }
         }
         if(message.startsWith(".tbaeventdata"))
@@ -94,7 +95,7 @@ public class CDPostBot extends ListenerAdapter {
                 }
             }
         }
-        if(message.startsWith(".tbalastscore"))
+        if(message.startsWith(".tbalastmatch"))
         {
             String eventKey = message.substring(14);
             
@@ -133,6 +134,29 @@ public class CDPostBot extends ListenerAdapter {
                         System.out.println(object.get("key").getAsString());
                         msg(event, object.get("key").getAsString());
                     }
+                }
+            }
+        }
+        if(message.toLowerCase().startsWith(".tbagetmatch"))
+        {
+            String[] tmp = message.toLowerCase().split("\\s+");
+            
+            JsonArray array = gson.fromJson(getEventMatchesString(tmp[1]), JsonArray.class);
+            
+            for(JsonElement element: array)
+            {
+                JsonObject object = element.getAsJsonObject();
+                String compLevelMatchNumber = object.get("comp_level").getAsString() + object.get("match_number").getAsString();
+                
+                if(compLevelMatchNumber.equalsIgnoreCase(tmp[2]))
+                {
+                    JsonObject alliances = object.get("alliances").getAsJsonObject();
+                    msg(event, "match: " + object.get("comp_level").getAsString() + object.get("match_number").getAsString());
+                    msg(event, "time: " + object.get("time_string").getAsString());
+                    msg(event, "blue: " + alliances.get("blue").getAsJsonObject().get("score").getAsString());
+                    msg(event, "teams: " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(0).getAsString() + ", " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(1).getAsString() + ", " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(2).getAsString());
+                    msg(event, "red: " + alliances.get("red").getAsJsonObject().get("score").getAsString());
+                    msg(event, "teams: " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(0).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(1).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(2).getAsString());
                 }
             }
         }
