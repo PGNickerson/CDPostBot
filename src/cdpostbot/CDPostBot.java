@@ -13,7 +13,8 @@ import com.google.gson.*;
 import com.google.gson.annotations.*;
 import java.net.URLDecoder;
 
-public class CDPostBot extends ListenerAdapter {
+public class CDPostBot extends ListenerAdapter
+{
     
     static String eventListString;
     static PircBotX bot = new PircBotX();
@@ -22,32 +23,45 @@ public class CDPostBot extends ListenerAdapter {
     static String eventMatchesString;
     static JsonArray eventMatches;
 
-    public CDPostBot() {
+    public CDPostBot()
+    {
     }
 
-    public void msg(MessageEvent event, String outputMessage) {
+    public void msg(MessageEvent event, String outputMessage)
+    {
         bot.sendMessage(event.getChannel(), outputMessage);
     }
 
-    public void msg(String chan, String outputMessage) {
+    public void msg(String chan, String outputMessage)
+    {
         bot.sendMessage(chan, outputMessage);
+    }
+    
+    public void privmsg(User user, String outputMessage)
+    {
+        bot.sendMessage(user, outputMessage);
     }
 
     @Override
-    public void onMessage(MessageEvent event) throws Exception {
+    public void onMessage(MessageEvent event) throws Exception
+    {
         Gson gson = new Gson();
         String message = event.getMessage();
         String nick = event.getUser().getNick();
         String name = event.getChannel().getName();
-        if (message.equalsIgnoreCase(".test")) {
+        if (message.equalsIgnoreCase(".test"))
+        {
             msg(event, "test received");
         }
-        if (message.startsWith(".ping")) {
+        if (message.startsWith(".ping"))
+        {
             msg(event, ping(message.substring(6)));
         }
-        if (message.startsWith(".google")) {
+        if (message.startsWith(".google"))
+        {
             googleMsgResults = google(message.substring(8));
-            if (googleMsgResults.getResponseData().getResults().size() != 0) {
+            if (googleMsgResults.getResponseData().getResults().size() != 0)
+            {
                 String stripped = googleMsgResults.getResponseData().getResults().get(0).getTitle().replaceAll("<[^>]*>", "");
                 msg(event, stripped + " - " + URLDecoder.decode(googleMsgResults.getResponseData().getResults().get(0).getUrl(), "UTF-8"));
             }
@@ -57,7 +71,8 @@ public class CDPostBot extends ListenerAdapter {
             String tmp = message.substring(10);
             
             googleMsgResults = google("site:chiefdelphi.com " + tmp);
-            if (googleMsgResults.getResponseData().getResults().size() != 0) {
+            if (googleMsgResults.getResponseData().getResults().size() != 0)
+            {
                 String stripped = googleMsgResults.getResponseData().getResults().get(0).getTitle().replaceAll("<[^>]*>", "");
                 msg(event, stripped + " - " + URLDecoder.decode(googleMsgResults.getResponseData().getResults().get(0).getUrl(), "UTF-8"));
             }
@@ -159,6 +174,21 @@ public class CDPostBot extends ListenerAdapter {
                     msg(event, "teams: " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(0).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(1).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(2).getAsString());
                 }
             }
+        }
+        if(message.equalsIgnoreCase(".help"))
+        {
+            privmsg(event.getUser(), "CDBot Help:");
+            privmsg(event.getUser(), ".help | PM's this help to the person who typed .help");
+            privmsg(event.getUser(), ".test | replies \"test received\"");
+            privmsg(event.getUser(), ".ping <site> | pings <site> and gives the return code");
+            privmsg(event.getUser(), ".google <query> | googles <query> and outputs the top result");
+            privmsg(event.getUser(), ".cdsearch <query> | same thing as above, but Chief Delphi specific");
+            privmsg(event.getUser(), ".tbagetkey <event name> | outputs the event key for <event name> for use with other commands. This outputs the 2014 event keys currently");
+            privmsg(event.getUser(), ".tbaeventdata <event key> | outputs some of the event data for the event specified by the event key");
+            privmsg(event.getUser(), ".tbaeventpage <event key> | outputs the URL for the TBA event page for the event specified by the event key");
+            privmsg(event.getUser(), ".tbalastmatch <event key> | outputs the match data for the last match played for the event specified by the event key");
+            privmsg(event.getUser(), ".tbagetmatch <event key> <match number> | outputs the match data for the specified match for the event specified by the event key");
+            privmsg(event.getUser(), "Match numbers are in the format <competition level letter><match number> | valid event levels are qm, ef, qf, sf, and f | final 1 would be f1");
         }
     }
 
