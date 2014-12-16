@@ -148,6 +148,7 @@ public class CDPostBot extends ListenerAdapter
                     {
                         System.out.println(object.get("key").getAsString());
                         msg(event, object.get("key").getAsString());
+                        break;
                     }
                 }
             }
