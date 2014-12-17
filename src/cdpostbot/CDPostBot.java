@@ -194,7 +194,7 @@ public class CDPostBot extends ListenerAdapter
             privmsg(event.getUser(), ".tbagetmatch <event key> <match number> | outputs the match data for the specified match for the event specified by the event key");
             privmsg(event.getUser(), "Match numbers are in the format <competition level letter><match number> | valid event levels are qm, ef, qf, sf, and f | final 1 would be f1");
         }
-        if (message.startsWith(".addEvent"))
+        if (message.startsWith(".addevent"))
         {
             String[] tmp = message.toLowerCase().split("\\s+");
 
@@ -231,7 +231,7 @@ public class CDPostBot extends ListenerAdapter
                 bot.sendMessage("##CDBot", feed.getMessages().get(0).getTitle() + " | " + feed.getMessages().get(0).getLink());
                 bot.sendMessage("##FRC", feed.getMessages().get(0).getTitle() + " | " + feed.getMessages().get(0).getLink());
             }
-            
+
             if (!addedEvents.isEmpty())
             {
                 for (String eventKey : addedEvents)
@@ -247,16 +247,21 @@ public class CDPostBot extends ListenerAdapter
                             object = element.getAsJsonObject();
 
                             JsonObject alliances = object.get("alliances").getAsJsonObject();
-
+                            
+                            System.out.println(getEventString(eventKey));
+                            
+                            JsonObject eventObject = gson.fromJson(getEventString(eventKey), JsonObject.class);
+                            
+                            bot.sendMessage("##FRC", "event: " + eventObject.get("name").getAsString());
                             bot.sendMessage("##FRC", "match: " + object.get("comp_level").getAsString() + object.get("match_number").getAsString());
                             bot.sendMessage("##FRC", "time: " + object.get("time_string").getAsString());
                             bot.sendMessage("##FRC", "blue: " + alliances.get("blue").getAsJsonObject().get("score").getAsString());
                             bot.sendMessage("##FRC", "teams: " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(0).getAsString() + ", " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(1).getAsString() + ", " + alliances.get("blue").getAsJsonObject().get("teams").getAsJsonArray().get(2).getAsString());
                             bot.sendMessage("##FRC", "red: " + alliances.get("red").getAsJsonObject().get("score").getAsString());
                             bot.sendMessage("##FRC", "teams: " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(0).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(1).getAsString() + ", " + alliances.get("red").getAsJsonObject().get("teams").getAsJsonArray().get(2).getAsString());
-                            
+
                             eventLastTimes.put(eventKey, lastTime);
-                            
+
                             break;
                         }
                     }
@@ -334,6 +339,11 @@ public class CDPostBot extends ListenerAdapter
     static String getEventMatchesString(String key)
     {
         return HTTP.GET("http://www.thebluealliance.com/api/v2/event/" + key + "/matches");
+    }
+    
+    static String getEventString(String key)
+    {
+        return HTTP.GET("http://www.thebluealliance.com/api/v2/event/" + key);
     }
 
     static boolean addEvent(String eventKey)
