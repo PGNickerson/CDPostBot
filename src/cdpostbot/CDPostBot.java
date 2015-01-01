@@ -59,13 +59,11 @@ public class CDPostBot extends ListenerAdapter
         {
             msg(event, ping(message.substring(6)));
         }
-        if (message.startsWith(".google"))
+        if (message.startsWith(".ddg"))
         {
-            googleMsgResults = google(message.substring(8));
-            if (googleMsgResults.getResponseData().getResults().size() != 0)
+            JsonArray results = gson.fromJson(HTTP.GET(message.substring(5)), JsonArray.class);
+            if (!results.isJsonNull())
             {
-                String stripped = googleMsgResults.getResponseData().getResults().get(0).getTitle().replaceAll("<[^>]*>", "");
-                msg(event, stripped + " - " + URLDecoder.decode(googleMsgResults.getResponseData().getResults().get(0).getUrl(), "UTF-8"));
             }
         }
         if (message.startsWith(".cdsearch"))
@@ -187,18 +185,25 @@ public class CDPostBot extends ListenerAdapter
             privmsg(event.getUser(), ".ping <site> | pings <site> and gives the return code");
             privmsg(event.getUser(), ".google <query> | googles <query> and outputs the top result");
             privmsg(event.getUser(), ".cdsearch <query> | same thing as above, but Chief Delphi specific");
-            privmsg(event.getUser(), ".tbagetkey <event name> | outputs the event key for <event name> for use with other commands. This outputs the 2014 event keys currently");
+            privmsg(event.getUser(), ".tbagetkey <event name> | outputs the event key for <event name> for use with other commands. This outputs the 2015 event keys currently");
             privmsg(event.getUser(), ".tbaeventdata <event key> | outputs some of the event data for the event specified by the event key");
             privmsg(event.getUser(), ".tbaeventpage <event key> | outputs the URL for the TBA event page for the event specified by the event key");
             privmsg(event.getUser(), ".tbalastmatch <event key> | outputs the match data for the last match played for the event specified by the event key");
             privmsg(event.getUser(), ".tbagetmatch <event key> <match number> | outputs the match data for the specified match for the event specified by the event key");
             privmsg(event.getUser(), "Match numbers are in the format <competition level letter><match number> | valid event levels are qm, ef, qf, sf, and f | final 1 would be f1");
+            privmsg(event.getUser(), ".addevent <event key> | adds the event specified by the event key to the list of events for live updating");
         }
         if (message.startsWith(".addevent"))
         {
             String[] tmp = message.toLowerCase().split("\\s+");
 
-            addEvent(tmp[1]);
+            if (addEvent(tmp[1]))
+            {
+                msg(event, "added event " + tmp[1] + " to live update");
+            } else
+            {
+                msg(event, "event " + tmp[1] + " was already added");
+            }
         }
     }
 
@@ -247,11 +252,11 @@ public class CDPostBot extends ListenerAdapter
                             object = element.getAsJsonObject();
 
                             JsonObject alliances = object.get("alliances").getAsJsonObject();
-                            
-                            System.out.println(getEventString(eventKey));
-                            
+
+                            //System.out.println(getEventString(eventKey));
+
                             JsonObject eventObject = gson.fromJson(getEventString(eventKey), JsonObject.class);
-                            
+
                             bot.sendMessage("##FRC", "event: " + eventObject.get("name").getAsString());
                             bot.sendMessage("##FRC", "match: " + object.get("comp_level").getAsString() + object.get("match_number").getAsString());
                             bot.sendMessage("##FRC", "time: " + object.get("time_string").getAsString());
@@ -326,7 +331,7 @@ public class CDPostBot extends ListenerAdapter
 
     static void getEventListString()
     {
-        eventListString = HTTP.GET("http://www.thebluealliance.com/api/v2/events/2014");
+        eventListString = HTTP.GET("http://www.thebluealliance.com/api/v2/events/2015");
     }
 
     static void getTBAEventList()
@@ -340,7 +345,7 @@ public class CDPostBot extends ListenerAdapter
     {
         return HTTP.GET("http://www.thebluealliance.com/api/v2/event/" + key + "/matches");
     }
-    
+
     static String getEventString(String key)
     {
         return HTTP.GET("http://www.thebluealliance.com/api/v2/event/" + key);
@@ -377,6 +382,23 @@ public class CDPostBot extends ListenerAdapter
         }
 
         return !isAlreadyAdded;
+    }
+
+    static boolean removeEvent(String eventKey)
+    {
+        boolean isExisting = false;
+        for (String key : addedEvents)
+        {
+            if (key.equals(eventKey))
+            {
+                isExisting = true;
+
+                addedEvents.remove(eventKey);
+                eventLastTimes.remove(eventKey);
+            }
+        }
+
+        return isExisting;
     }
 }
 
