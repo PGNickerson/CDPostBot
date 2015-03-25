@@ -59,13 +59,6 @@ public class CDPostBot extends ListenerAdapter
         {
             msg(event, ping(message.substring(6)));
         }
-        if (message.startsWith(".ddg"))
-        {
-            JsonArray results = gson.fromJson(HTTP.GET(message.substring(5)), JsonArray.class);
-            if (!results.isJsonNull())
-            {
-            }
-        }
         if (message.startsWith(".cdsearch"))
         {
             String tmp = message.substring(10);
@@ -183,7 +176,6 @@ public class CDPostBot extends ListenerAdapter
             privmsg(event.getUser(), ".help | PM's this help to the person who typed .help");
             privmsg(event.getUser(), ".test | replies \"test received\"");
             privmsg(event.getUser(), ".ping <site> | pings <site> and gives the return code");
-            privmsg(event.getUser(), ".google <query> | googles <query> and outputs the top result");
             privmsg(event.getUser(), ".cdsearch <query> | same thing as above, but Chief Delphi specific");
             privmsg(event.getUser(), ".tbagetkey <event name> | outputs the event key for <event name> for use with other commands. This outputs the 2015 event keys currently");
             privmsg(event.getUser(), ".tbaeventdata <event key> | outputs some of the event data for the event specified by the event key");
